@@ -2,6 +2,7 @@ using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using Serilog;
 using OpenQA.Selenium.Support.UI;
+using SeleniumExtras.WaitHelpers;
 
 namespace DemoQATestAutomation
 {
@@ -38,8 +39,8 @@ namespace DemoQATestAutomation
             // Поиск и клик на элементе "Text Box"
             ClickElementByXPath("//li[@id='item-0' and span[text()='Text Box']]");
 
-            // Ожидание загрузки страницы
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+            // Ожидание загрузки элемента и запись в лог
+            WaitUntilElementIsLoaded(By.XPath("//div[@class='col-12 mt-4 col-md-6']"), TimeSpan.FromSeconds(10));
 
             // Пример использования логов браузера
             var logs = driver.Manage().Logs.GetLog(LogType.Browser);
@@ -75,6 +76,20 @@ namespace DemoQATestAutomation
                 // Логирование ошибки, если элемент не найден
                 Log.Error("Элемент не найден.");
             }
+        }
+
+
+        static void WaitUntilElementIsLoaded(By locator, TimeSpan timeout)
+        {
+            // Логирование
+            Log.Information($"Ожидание загрузки элемента с использованием локатора: {locator}");
+
+            // Ожидание загрузки элемента
+            WebDriverWait wait = new WebDriverWait(driver, timeout);
+            IWebElement element = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(locator));
+
+            // Логирование успешного завершения ожидания
+            Log.Information($"Элемент успешно загружен.");
         }
 
         [TearDown]
