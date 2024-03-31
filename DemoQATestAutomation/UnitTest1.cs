@@ -3,6 +3,8 @@ using OpenQA.Selenium.Chrome;
 using Serilog;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
+using System.Threading;
+using OpenQA.Selenium.Interactions;
 
 namespace DemoQATestAutomation
 {
@@ -18,35 +20,84 @@ namespace DemoQATestAutomation
                  .WriteTo.File("logs.txt")
                  .CreateLogger();
 
-            // Настройка ChromeOptions для записи логов браузера
+            // Configure ChromeOptions to record browser logs
             ChromeOptions options = new ChromeOptions();
             options.SetLoggingPreference(LogType.Browser, LogLevel.All);
 
-            // Инициализация драйвера Chrome с использованием настроек
+            // Initialize the Chrome driver using settings
             driver = new ChromeDriver(options);
 
-            // Начало теста - запись лога
-            Log.Information("Тест начался.");
+            // Start of the test - recording the log
+            Log.Information("The test has started.\n");
         }
 
         [Test]
         public void Test1()
         {
 
+            Log.Information("Start test elements: Text box");
+
             driver.Navigate().GoToUrl("https://demoqa.com/elements"); 
             driver.Manage().Window.Maximize();
 
-            // Поиск и клик на элементе "Text Box"
-            ClickElementByXPath("//li[@id='item-0' and span[text()='Text Box']]");
+            // Search and click on an element
+            InteractWithElementByXPath("//li[@id='item-0' and span[text()='Text Box']]");
 
-            // Ожидание загрузки элемента и запись в лог
+            // Wait for the element to load and write to the log
             WaitUntilElementIsLoaded(By.XPath("//div[@class='col-12 mt-4 col-md-6']"), TimeSpan.FromSeconds(10));
 
-            // Пример использования логов браузера
+            InteractWithElementByXPath("//input[@placeholder='Full Name' and @type='text']", true, "Test Text");
+
+            InteractWithElementByXPath("//input[@id='userEmail']", true, "yackipov.asset@mail.ru");
+
+            InteractWithElementByXPath("//textarea[@placeholder='Current Address']", true, "Test text Current Address");
+
+            InteractWithElementByXPath("//textarea[@id='permanentAddress']", true, "Test text Permanent Address");
+
+            // Scroll to the bottom of the page
+            IWebElement body = driver.FindElement(By.TagName("body"));
+            body.SendKeys(Keys.End);
+
+             
+            //Actions actions = new Actions(driver);
+            //IWebElement submitButton = driver.FindElement(By.XPath("//button[@id='submit']"));
+            //actions.MoveToElement(submitButton).Perform();
+
+            WaitUntilElementIsLoaded(By.XPath("//button[@id='submit']"), TimeSpan.FromSeconds(10));
+
+            InteractWithElementByXPath("//button[@id='submit']");
+            try
+            {
+                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
+                // Waiting for the <div id="output" class="mt-4 row"> element to appear
+                IWebElement outputDiv = wait.Until(ExpectedConditions.ElementIsVisible(By.Id("output")));
+
+                // Checking the presence of an element
+                if (outputDiv != null)
+                {
+                    Log.Information("The <div id='output'> element was found.");
+
+                    // Вывод данных в лог
+                    Log.Information($"Name: {outputDiv.FindElement(By.Id("name")).Text}");
+                    Log.Information($"Email: {outputDiv.FindElement(By.Id("email")).Text}");
+                    Log.Information($"Current address: {outputDiv.FindElement(By.Id("currentAddress")).Text}");
+                    Log.Information($"Permanent Address: {outputDiv.FindElement(By.Id("permanentAddress")).Text}");
+                }
+                else
+                {
+                    Log.Error("The <div id='output'> element was not found.");
+                }
+            }
+            catch (WebDriverTimeoutException)
+            {
+                Log.Error("Timeout for waiting for the <div id='output'> element to appear.");
+            }
+
+            // Example of using browser logs
             var logs = driver.Manage().Logs.GetLog(LogType.Browser);
             foreach (var log in logs)
             {
-                // Проверяем, является ли лог ошибкой, и если да, записываем его
+                // Check if the log is an error, and if so, write it
                 if (log.Level == LogLevel.Severe)
                 {
                     Log.Error($"Browser Error: {log.Timestamp} - {log.Message}");
@@ -54,30 +105,50 @@ namespace DemoQATestAutomation
             }
         }
 
-        static void ClickElementByXPath(string xpath)
+        static void InteractWithElementByXPath(string xpath, bool isTextInput = false, string text = null)
         {
             // Логирование
             Log.Information($"Поиск элемента по XPath: {xpath}");
 
-            // Поиск элемента по XPath
-            IWebElement element = driver.FindElement(By.XPath(xpath));
-
-            // Проверка наличия элемента
-            if (element != null)
+            try
             {
-                // Логирование
-                Log.Information("Элемент найден.");
+                // Поиск элемента по XPath
+                IWebElement element = driver.FindElement(By.XPath(xpath));
 
-                // Выполнение клика на элементе
-                element.Click();
+                // Проверка наличия элемента
+                if (element != null)
+                {
+                    // Логирование
+                    Log.Information("Элемент найден.");
+
+                    // Если isTextInput равен true, то вводим текст в поле
+                    if (isTextInput && !string.IsNullOrEmpty(text))
+                    {
+                        // Ввод текста в поле
+                        element.SendKeys(text);
+                        Log.Information($"Текст '{text}' успешно введен в поле {xpath}.");
+                    }
+                    else
+                    {
+                        // Выполнение клика на элементе
+                        element.Click();
+                    }
+                }
+                else
+                {
+                    // Логирование ошибки, если элемент не найден
+                    Log.Error("Элемент не найден.");
+                }
             }
-            else
+            catch (NoSuchElementException ex)
             {
-                // Логирование ошибки, если элемент не найден
-                Log.Error("Элемент не найден.");
+                Log.Error($"Элемент не найден: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Произошла ошибка: {ex.Message}");
             }
         }
-
 
         static void WaitUntilElementIsLoaded(By locator, TimeSpan timeout)
         {
@@ -96,7 +167,7 @@ namespace DemoQATestAutomation
         public void TearDown() 
         {
             // Завершение теста - запись лога
-            Log.Information("Тест завершился.");
+            Log.Information("Тест завершился.\n\n\n");
 
             // Закрытие браузера
             driver.Quit();
