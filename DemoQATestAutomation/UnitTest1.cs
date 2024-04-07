@@ -77,7 +77,7 @@ namespace DemoQATestAutomation
                 {
                     Log.Information("The <div id='output'> element was found.");
 
-                    // Вывод данных в лог
+                    // Output data to log
                     Log.Information($"Name: {outputDiv.FindElement(By.Id("name")).Text}");
                     Log.Information($"Email: {outputDiv.FindElement(By.Id("email")).Text}");
                     Log.Information($"Current address: {outputDiv.FindElement(By.Id("currentAddress")).Text}");
@@ -107,72 +107,72 @@ namespace DemoQATestAutomation
 
         static void InteractWithElementByXPath(string xpath, bool isTextInput = false, string text = null)
         {
-            // Логирование
-            Log.Information($"Поиск элемента по XPath: {xpath}");
+            // Logging
+            Log.Information($"Finding an element by XPath: {xpath}");
 
             try
             {
-                // Поиск элемента по XPath
+                // Finding an element by XPath
                 IWebElement element = driver.FindElement(By.XPath(xpath));
 
-                // Проверка наличия элемента
+                // Checking the presence of an element
                 if (element != null)
                 {
-                    // Логирование
-                    Log.Information("Элемент найден.");
+                    
+                    Log.Information("The item was found.");
 
-                    // Если isTextInput равен true, то вводим текст в поле
+                    // If isTextInput is true, enter text into the field.
                     if (isTextInput && !string.IsNullOrEmpty(text))
                     {
-                        // Ввод текста в поле
+                        // Entering text in a field
                         element.SendKeys(text);
-                        Log.Information($"Текст '{text}' успешно введен в поле {xpath}.");
+                        Log.Information($"Text '{text}' successfully entered the field {xpath}.");
                     }
                     else
                     {
-                        // Выполнение клика на элементе
+                        
                         element.Click();
                     }
                 }
                 else
                 {
-                    // Логирование ошибки, если элемент не найден
-                    Log.Error("Элемент не найден.");
+                    // Log an error if element not found
+                    Log.Error("Element not found.");
                 }
             }
             catch (NoSuchElementException ex)
             {
-                Log.Error($"Элемент не найден: {ex.Message}");
+                Log.Error($"Element not found: {ex.Message}");
             }
             catch (Exception ex)
             {
-                Log.Error($"Произошла ошибка: {ex.Message}");
+                Log.Error($"An error has occurred: {ex.Message}");
             }
         }
 
         static void WaitUntilElementIsLoaded(By locator, TimeSpan timeout)
         {
-            // Логирование
-            Log.Information($"Ожидание загрузки элемента с использованием локатора: {locator}");
+            
+            Log.Information($"Waiting for an element to load using a locator: {locator}");
 
-            // Ожидание загрузки элемента
+            // Waiting for element to load
             WebDriverWait wait = new WebDriverWait(driver, timeout);
             IWebElement element = wait.Until(SeleniumExtras.WaitHelpers.ExpectedConditions.ElementIsVisible(locator));
 
-            // Логирование успешного завершения ожидания
-            Log.Information($"Элемент успешно загружен.");
+            
+            Log.Information($"The item has been loaded successfully.");
         }
 
         [TearDown]
         public void TearDown() 
         {
-            // Завершение теста - запись лога
-            Log.Information("Тест завершился.\n\n\n");
+            // Test completion - log entry
+            Log.Information("The test is completed.\n\n\n");
 
-            // Закрытие браузера
+            
             driver.Quit();
 
-            // Освобождение ресурсов логирования
+            // Freeing up logging resources
             Log.CloseAndFlush();
         }
     }
